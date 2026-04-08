@@ -1,0 +1,156 @@
+==============================================================
+  MaSoThue.com Crawler v1.0
+  Crawl Vietnamese company tax data from masothue.com
+==============================================================
+
+REQUIREMENTS
+------------
+- Windows Server (or any OS with Python)
+- Python 3.8 or higher
+- Internet connection
+
+INSTALLATION
+------------
+1. Extract all files to a folder (e.g. C:\crawlmst)
+2. Open Command Prompt, navigate to the folder:
+      cd C:\crawlmst
+3. Install dependencies:
+      run install
+   Or manually:
+      pip install -r requirements.txt
+
+USAGE
+-----
+
+  MODE 1: Search by Tax ID or Company Name
+  -----------------------------------------
+  run search 3502569148                    Search by Tax ID
+  run search "Minh Huy"                   Search by company name
+  run search "Minh Huy" --detail           Include full details
+  run search 3502569148 --format excel     Export to Excel only
+
+  MODE 2: Crawl All Companies
+  ----------------------------
+  run all                                  Crawl ALL provinces (very long!)
+  run all --province "ha-noi"              Crawl one province only
+  run all --province "ho-chi-minh"         Province name supports ASCII slug
+  run all --max-pages 5                    Limit pages per province
+  run all --province "ha-noi" --detail     Full details per company
+  run all --detail --format excel          Full details, Excel output
+
+  Or use python directly:
+  python crawl.py search "Minh Huy" --format both
+  python crawl.py all --province "ha-noi" --max-pages 3
+
+OPTIONS
+-------
+  --format csv|excel|both    Output format (default: both)
+  --detail                   Fetch full detail page per company (slower)
+  --delay 1.5                Delay between requests in seconds (default: 1.0)
+  --province NAME            Filter to a specific province (partial match)
+  --max-pages N              Max pages to crawl per province
+
+DATA FIELDS
+------------
+
+  From listing (fast):
+    - Ma so thue (Tax ID)
+    - Ten cong ty (Company name)
+    - Nguoi dai dien (Representative)
+    - Dia chi (Address)
+    - URL (Detail page link)
+
+  With --detail flag (slower, 1 extra request per company):
+    - Ten quoc te (International name)
+    - Ten viet tat (Short name)
+    - Dia chi thue (Tax address)
+    - Dien thoai (Phone)
+    - Tinh trang (Status: active/inactive/pending)
+    - Loai hinh DN (Company type)
+    - Ngay hoat dong (Start date)
+    - Co quan thue (Tax authority)
+    - Nganh nghe chinh (Main business line)
+
+OUTPUT
+------
+- Files saved to "output" folder (auto-created)
+- Filenames: masothue_YYYYMMDD_HHMMSS.csv / .xlsx
+- CSV uses UTF-8 BOM encoding (opens correctly in Excel)
+- Excel has formatted header row
+
+PROVINCE LIST (use with --province)
+------------------------------------
+  ASCII slug         Vietnamese name
+  an-giang           An Giang
+  ba-ria-vung-tau    Ba Ria - Vung Tau
+  bac-giang          Bac Giang
+  bac-kan            Bac Kan
+  bac-lieu           Bac Lieu
+  bac-ninh           Bac Ninh
+  ben-tre            Ben Tre
+  binh-dinh          Binh Dinh
+  binh-duong         Binh Duong
+  binh-phuoc         Binh Phuoc
+  binh-thuan         Binh Thuan
+  ca-mau             Ca Mau
+  can-tho            Can Tho
+  cao-bang            Cao Bang
+  da-nang            Da Nang
+  dak-lak            Dak Lak
+  dak-nong           Dak Nong
+  dien-bien          Dien Bien
+  dong-nai           Dong Nai
+  dong-thap          Dong Thap
+  gia-lai            Gia Lai
+  ha-giang           Ha Giang
+  ha-nam             Ha Nam
+  ha-noi             Ha Noi
+  ha-tinh            Ha Tinh
+  hai-duong          Hai Duong
+  hai-phong          Hai Phong
+  hau-giang          Hau Giang
+  ho-chi-minh        Ho Chi Minh
+  hoa-binh           Hoa Binh
+  hung-yen           Hung Yen
+  khanh-hoa          Khanh Hoa
+  kien-giang         Kien Giang
+  kon-tum            Kon Tum
+  lai-chau           Lai Chau
+  lam-dong           Lam Dong
+  lang-son           Lang Son
+  lao-cai            Lao Cai
+  long-an            Long An
+  nam-dinh           Nam Dinh
+  nghe-an            Nghe An
+  ninh-binh          Ninh Binh
+  ninh-thuan         Ninh Thuan
+  phu-tho            Phu Tho
+  phu-yen            Phu Yen
+  quang-binh         Quang Binh
+  quang-nam          Quang Nam
+  quang-ngai         Quang Ngai
+  quang-ninh         Quang Ninh
+  quang-tri          Quang Tri
+  soc-trang          Soc Trang
+  son-la             Son La
+  tay-ninh           Tay Ninh
+  thai-binh          Thai Binh
+  thai-nguyen        Thai Nguyen
+  thanh-hoa          Thanh Hoa
+  thua-thien-hue     Thua Thien Hue
+  tien-giang         Tien Giang
+  tra-vinh           Tra Vinh
+  tuyen-quang        Tuyen Quang
+  vinh-long          Vinh Long
+  vinh-phuc          Vinh Phuc
+  yen-bai            Yen Bai
+
+NOTES
+-----
+- Default delay is 1 second between requests. Increase with --delay
+  if you get blocked.
+- Crawling ALL provinces with --detail will take a very long time.
+  Recommend using --province and --max-pages to limit scope.
+- Output folder is created automatically on first run.
+
+==============================================================
