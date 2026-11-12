@@ -20,7 +20,8 @@ Options:
 
 import argparse
 import sys
-from scraper import MasoThueScraper
+from scraper import MasoThueScraper, SourceBlockedError, DataMismatchError
+import requests
 from exporter import export_csv, export_excel
 
 
@@ -43,7 +44,7 @@ def cmd_search(args):
             url = r.get("detail_url")
             if url:
                 print(f"  [{i+1}/{len(results)}] Fetching detail: {r.get('company_name', url)}")
-                detail = scraper.get_company_detail(url)
+                detail = scraper.get_company_detail(url, expected_tax_id=r.get("tax_id"))
                 if detail:
                     detail["detail_url"] = url
                     detailed.append(detail)
@@ -86,17 +87,21 @@ def cmd_all(args):
         count = 0
         for company in scraper.crawl_province(prov_url, max_pages=args.max_pages):
             if args.detail and company.get("detail_url"):
-                detail = scraper.get_company_detail(company["detail_url"])
+                detail = scraper.get_company_detail(company["detail_url"], expected_tax_id=company.get("tax_id"))
                 if detail:
                     detail["detail_url"] = company["detail_url"]
                     company = detail
             all_companies.append(company)
             count += 1
+            if args.max_records and len(all_companies) >= args.max_records:
+                break
         print(f"  => {count} companies from {prov_name}")
 
         # Save intermediate results every 1000 records
         if len(all_companies) % 1000 < 20 and len(all_companies) > 0:
             print(f"  [Checkpoint] {len(all_companies)} total companies so far...")
+        if args.max_records and len(all_companies) >= args.max_records:
+            break
 
     print(f"\n{'='*50}")
     print(f"Total: {len(all_companies)} companies")
@@ -156,17 +161,31 @@ def main():
     p_all.add_argument("--max-pages", type=int, default=None,
                        help="Max pages per province")
 
+    p_all.add_argument("--max-records", type=int, default=None,
+                       help="Stop after this many records total (use for bounded trials)")
+
     args = parser.parse_args()
+    if getattr(args, "delay", 0) < 0:
+        parser.error("--delay must be non-negative")
+    for option in ("max_pages", "max_records"):
+        value = getattr(args, option, None)
+        if value is not None and value < 1:
+            parser.error("--" + option.replace("_", "-") + " must be positive")
 
     if not args.command:
         parser.print_help()
         sys.exit(1)
 
-    if args.command == "search":
-        cmd_search(args)
-    elif args.command == "all":
-        cmd_all(args)
+    try:
+        if args.command == "search":
+            cmd_search(args)
+        elif args.command == "all":
+            cmd_all(args)
+    except (SourceBlockedError, DataMismatchError, requests.RequestException, ValueError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
